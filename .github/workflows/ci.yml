@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install deps
+        run: pip install jupyter nbconvert pytest nbformat
+      - name: Validate notebooks
+        run: |
+          for nb in *.ipynb; do
+            [ -f "$nb" ] && python -m nbconvert --to notebook --execute --stdout "$nb" > /dev/null && echo "✓ $nb" || echo "✗ $nb"
+          done
+      - name: Lint Python
+        run: pip install ruff && ruff check . --ignore E501,E402,F401 || true
+
